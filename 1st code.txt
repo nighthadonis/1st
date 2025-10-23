@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My New Website</title>
+</head>
+<body>
+
+    <h1>Hello, world!</h1>
+    <p>This is the sentence I want on my website.</p>
+
+</body>
+</html>
