@@ -7,28 +7,75 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #06402B 0%, #013220 100%); /* Green lava oil blend */
-            color: #E0E0E0; /* Light grey text for contrast */
-            min-height: 100vh; /* Ensures background covers full height */
+            /* Initial dark background without light effect */
+            background-color: #000; /* Start with black */
+            color: #E0E0E0;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
+            overflow: hidden; /* Hide overflow from moving background */
+            cursor: none; /* Hide default cursor to use custom light */
+            position: relative; /* For the gradient overlay */
+        }
+
+        /* The moving galaxy background layer */
+        .galaxy-background {
+            position: absolute;
+            top: -50%; /* Start off-screen to allow movement */
+            left: -50%;
+            width: 200%; /* Make it larger than viewport */
+            height: 200%;
+            background: 
+                linear-gradient(135deg, #06402B 0%, #013220 100%), /* The base green blend */
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 40%), /* Subtle highlights */
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 40%);
+            background-size: 200% 200%; /* Scale up background for animation */
+            animation: moveGalaxy 40s linear infinite alternate; /* Slower, smoother movement */
+            z-index: -2; /* Behind everything */
+            filter: brightness(0.1); /* Start very dark */
+            transition: filter 0.2s ease; /* Smooth transition for brightness */
+        }
+
+        /* The torchlight effect overlay */
+        .torchlight {
+            position: fixed; /* Stays with the viewport */
+            width: 400px; /* Size of the light */
+            height: 400px;
+            border-radius: 50%; /* Makes it a circle */
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, transparent 70%); /* Soft light */
+            pointer-events: none; /* Allows clicks to pass through */
+            transform: translate(-50%, -50%); /* Centers the light on the mouse */
+            z-index: -1; /* Above the galaxy, below content */
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.3s ease; /* Smooth fade in/out */
+        }
+
+        .torchlight.active {
+            opacity: 1; /* Show when mouse is active */
+        }
+
+        /* Keyframe animation for the galaxy movement */
+        @keyframes moveGalaxy {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
         }
 
         .container {
-            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black container */
+            background-color: rgba(0, 0, 0, 0.7);
             padding: 40px 60px;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Subtle shadow */
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.8); /* Stronger shadow for dark mode */
             max-width: 500px;
             width: 90%;
             margin: 20px;
+            z-index: 1; /* Ensure container is above backgrounds */
         }
 
         h1 {
-            color: #C0C0C0; /* Lighter grey for heading */
+            color: #C0C0C0;
             margin-bottom: 25px;
             font-size: 2.5em;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
@@ -42,7 +89,7 @@
 
         .button {
             display: inline-block;
-            background-color: #06402B; /* Dark green button */
+            background-color: #06402B;
             color: white;
             padding: 12px 25px;
             border-radius: 5px;
@@ -52,10 +99,9 @@
         }
 
         .button:hover {
-            background-color: #013220; /* Darker green on hover */
+            background-color: #013220;
         }
 
-        /* Basic form styling for a retro feel */
         .input-group {
             margin-bottom: 20px;
         }
@@ -63,12 +109,12 @@
         input[type="text"],
         input[type="password"],
         input[type="email"] {
-            width: calc(100% - 24px); /* Full width minus padding */
+            width: calc(100% - 24px);
             padding: 12px;
             margin-top: 8px;
             border: 1px solid #06402B;
             border-radius: 5px;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black input */
+            background-color: rgba(0, 0, 0, 0.5);
             color: #E0E0E0;
             font-size: 1em;
         }
@@ -81,6 +127,9 @@
     </style>
 </head>
 <body>
+
+    <div class="galaxy-background"></div>
+    <div class="torchlight"></div>
 
     <div class="container">
         <h1>Retro Social Network</h1>
@@ -98,5 +147,57 @@
         <a href="#" class="button" style="background-color: #013220;">Create New Account</a>
     </div>
 
+    <script>
+        const body = document.body;
+        const galaxyBackground = document.querySelector('.galaxy-background');
+        const torchlight = document.querySelector('.torchlight');
+        let mouseX = 0;
+        let mouseY = 0;
+        let isMouseMoving = false;
+        let inactivityTimeout;
+
+        // Function to update torchlight and background brightness
+        function updateLight(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // Position the torchlight
+            torchlight.style.left = mouseX + 'px';
+            torchlight.style.top = mouseY + 'px';
+
+            // Calculate brightness based on mouse distance to center
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const maxDistance = Math.sqrt(centerX*centerX + centerY*centerY);
+            const currentDistance = Math.sqrt(Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2));
+
+            // Invert distance: closer to center = brighter, further = darker
+            const brightness = 0.1 + (0.9 * (1 - (currentDistance / maxDistance))); 
+            galaxyBackground.style.filter = `brightness(${Math.min(1, brightness)})`; // Ensure max brightness is 1
+
+            // Show torchlight and reset inactivity timer
+            if (!isMouseMoving) {
+                isMouseMoving = true;
+                torchlight.classList.add('active');
+            }
+            clearTimeout(inactivityTimeout);
+            inactivityTimeout = setTimeout(() => {
+                isMouseMoving = false;
+                torchlight.classList.remove('active');
+                galaxyBackground.style.filter = `brightness(0.1)`; // Return to dark
+            }, 1000); // Hide torchlight after 1 second of inactivity
+        }
+
+        // Listen for mouse movement
+        body.addEventListener('mousemove', updateLight);
+
+        // Initial setup for torchlight visibility
+        // Torchlight should fade out if no movement after page load
+        inactivityTimeout = setTimeout(() => {
+            isMouseMoving = false;
+            torchlight.classList.remove('active');
+            galaxyBackground.style.filter = `brightness(0.1)`;
+        }, 1000); // 1 second after load, fade out
+    </script>
 </body>
 </html>
